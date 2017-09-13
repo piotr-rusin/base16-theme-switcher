@@ -1,0 +1,9 @@
+#virtualenv
+env/
+.venv
+
+*.pyc
+
+# Distribution / packaging
+dist/
+*.egg-info/
