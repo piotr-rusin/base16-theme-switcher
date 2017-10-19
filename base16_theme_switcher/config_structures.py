@@ -3,6 +3,7 @@ import logging
 from collections.abc import Mapping, MutableMapping
 from pathlib import Path
 
+import configobj
 from ruamel.yaml import YAML
 
 
@@ -286,3 +287,15 @@ class YamlConfigPath(LazilySaveableMappingPath):
 
     def _write(self, data):
         self._LOADER.dump(data, self._path)
+
+
+class CfgConfigPath(LazilySaveableMappingPath):
+    """A path to an ini-type file."""
+
+    _get_empty_data = configobj.ConfigObj
+
+    def _read(self):
+        return configobj.ConfigObj(str(self._path))
+
+    def _write(self, data):
+        self._data.write()
