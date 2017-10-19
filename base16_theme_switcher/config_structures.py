@@ -12,3 +12,7 @@ class SetupError(Exception):
 
 class ConfigKeyError(SetupError, KeyError):
     """A value of a missing configuration option was requested."""
+
+
+class ConfiguredPathError(SetupError, OSError):
+    """A system error occured when processing a user-provided path."""
