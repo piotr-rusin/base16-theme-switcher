@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+from unittest.mock import Mock
 
 from parameterized import parameterized
 
 from base16_theme_switcher.config_structures import (
     ConfigKeyError,
     ConfigMapping,
+    RootConfigMapping,
 )
 
 
@@ -115,3 +117,14 @@ class ConfigMappingTest(unittest.TestCase):
         expected = list(iter(self.data))
         actual = list(iter(self.tested))
         self.assertEqual(expected, actual)
+
+
+class RootConfigMappingTest(ConfigMappingTest):
+    """Tests for RootConfigMapping class."""
+
+    def setUp(self):
+        """Prepare the instance of the class to be tested."""
+        self.prepareData()
+        source = Mock()
+        source.read.return_value = self.data
+        self.tested = RootConfigMapping(source)

@@ -95,3 +95,21 @@ class ConfigMapping(MutableMapping):
         :returns: the total number of option and section names.
         """
         return len(self._data)
+
+
+class RootConfigMapping(ConfigMapping):
+    """Represents a configuration mapping with a source or destination."""
+
+    def __init__(self, source):
+        """Create a new root config mapping.
+
+        :param source: an object to be used as a source of the configuration
+        data and a destination to which the changes to the data can be saved.
+        """
+        self._source = source
+        data = source.read(fallback_to_empty=True)
+        super().__init__(data, (str(source), ))
+
+    def save(self):
+        """Save the configuration data to its destination."""
+        self._source.write(self._data)
