@@ -251,3 +251,24 @@ class LazilySaveablePath(ConfiguredAbsolutePath):
             raise ConfiguredFileNotFoundError(
                 'Parent dir doesn\'t exist for file: {}'.format(self._path)
             )
+
+
+class LazilySaveableMappingPath(LazilySaveablePath):
+    """A path to a lazily saveable file containing a mapping."""
+
+    _get_empty_data = dict
+
+    @classmethod
+    def get_config_mapping(cls, path):
+        """Get config mapping from path.
+
+        :param path: a path pointing to a file of a type supported by
+            this class.
+        :param target_must_exist: a boolean value specifying if the
+            target of the path has to exist. If it doesn't have to,
+            reading data from the file will return an empty value.
+            Otherwise it will result in an error.
+        :returns: the configuration mapping using the file as a source
+            or destination for its data.
+        """
+        return RootConfigMapping(cls.from_path_str(path))
