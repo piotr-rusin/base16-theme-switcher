@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 from parameterized import parameterized
 
 from base16_theme_switcher.config_structures import (
     ConfigKeyError,
     ConfigMapping,
+    ConfiguredAbsolutePath,
+    ConfiguredFileNotFoundError,
+    ConfiguredPathError,
     RootConfigMapping,
 )
 
@@ -128,3 +131,42 @@ class RootConfigMappingTest(ConfigMappingTest):
         source = Mock()
         source.read.return_value = self.data
         self.tested = RootConfigMapping(source)
+
+
+class ConfiguredAbsolutePathTest(unittest.TestCase):
+    """Tests for ConfiguredAbsolutePath class."""
+
+    CLASS_UNDER_TEST = ConfiguredAbsolutePath
+
+    def test_str(self):
+        """Test if the correct path is returned as a string."""
+        expected = '/expected/string/path'
+
+        path = Mock()
+        internal_path = MagicMock()
+        path.expanduser().absolute.return_value = internal_path
+        internal_path.__str__.return_value = expected
+
+        tested = self.CLASS_UNDER_TEST(path)
+        expected = '/expected/string/path'
+        actual = str(tested)
+        self.assertEqual(expected, actual)
+
+    @parameterized.expand([
+        (FileNotFoundError, ConfiguredFileNotFoundError),
+        (OSError, ConfiguredPathError)
+    ])
+    def test_context_manager_handles(
+            self, handled_exception, raised_exception
+    ):
+        """Test if the exception is handled.
+
+        :param handled_exception: an exception expected to be handled
+            by the context manager.
+        :param raised_exception: an exception expected to be raised
+            while handling handled_exception.
+        """
+        tested = self.CLASS_UNDER_TEST(Mock())
+        with self.assertRaises(raised_exception):
+            with tested:
+                raise handled_exception()

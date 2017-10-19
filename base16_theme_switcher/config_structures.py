@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections.abc import Mapping, MutableMapping
+from pathlib import Path
 
 
 class SetupError(Exception):
@@ -113,3 +114,65 @@ class RootConfigMapping(ConfigMapping):
     def save(self):
         """Save the configuration data to its destination."""
         self._source.write(self._data)
+
+
+class ConfiguredAbsolutePath:
+    """A path used in the setup process of the application.
+
+    This class encapsulates common operations for paths used in the setup
+    phase of the application, like expanding a user directory, making
+    the path absolute and handling some errors that might occur while using
+    it.
+    """
+
+    def __init__(self, path):
+        """Create a new configured absolute path.
+
+        :param path: a path object
+        """
+        self._path = path.expanduser().absolute()
+
+    def __str__(self):
+        """Get the path as a string.
+
+        :returns: the path string.
+        """
+        return str(self._path)
+
+    def __enter__(self):
+        """Enter the context manager associated with this path.
+
+        The context manager is responsible for wrapping the expected errors
+        that might be raised from the methods of the path object in
+        application-specific exception classes. This allows for telling them
+        apart from unexpected errors and handling them differently.
+
+        :returns: the internal path object used by the instance.
+        """
+        return self._path
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit the context manager and handle the error.
+
+        The error is handled by checking its type and, depending on it,
+        re-raising the error as an exception of another type.
+
+        :raises ConfiguredFileNotFoundError: if the error is FileNotFound
+        :raises ConfiguredPathError: if the error is OSError
+        :returns: True if there are no errors, False otherwise.
+        """
+        if exc_type is FileNotFoundError:
+            raise ConfiguredFileNotFoundError(exc_value)
+        elif exc_type is OSError:
+            raise ConfiguredPathError(exc_value)
+        return exc_value is None
+
+    @classmethod
+    def from_path_str(cls, path):
+        """Create a new configured absolute path.
+
+        :param path: an object representing the path, acceptable as an
+            argument of pathlib.Path.
+        :returns: a new instance of the class.
+        """
+        return cls(Path(path))
