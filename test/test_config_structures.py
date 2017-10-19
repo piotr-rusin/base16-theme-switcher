@@ -11,6 +11,7 @@ from base16_theme_switcher.config_structures import (
     ConfiguredAbsolutePath,
     ConfiguredFileNotFoundError,
     ConfiguredPathError,
+    LazilySaveablePath,
     RootConfigMapping,
 )
 
@@ -170,3 +171,152 @@ class ConfiguredAbsolutePathTest(unittest.TestCase):
         with self.assertRaises(raised_exception):
             with tested:
                 raise handled_exception()
+
+
+class ConcreteLSPath(LazilySaveablePath):
+    """A subclass of LazilySaveablePath to be used in testing.
+
+    LazilySaveablePath is an example of template method pattern. It
+    implements most of the functionality expected of its subclasses,
+    except for some necessary, subclass-specific details. The methods
+    implemented by subclasses are much simpler and contain very little
+    code.
+
+    For these reasons, testing will be limited to testing the
+    implementation of the parent class. This is achieved by testing a
+    special subclass, providing the necessary methods as mocks.
+    """
+
+    def __init__(self, path):
+        """Create the new instance.
+
+        :param path: a mock object representing a file or directory path.
+        """
+        super().__init__(path)
+        self.internal_path = self._path
+        self.internal_read = self._read = Mock()
+        self.internal_write = self._write = Mock()
+        self.internal_get_empty_data = self._get_empty_data = Mock()
+
+
+class LazilySaveablePathTest(ConfiguredAbsolutePathTest):
+    """Tests for LazilySaveablePath class.
+
+    The class under test is actually a subclass of the class to be
+    tested. See the docstring of ConcreteLSPath for details.
+    """
+
+    CLASS_UNDER_TEST = ConcreteLSPath
+
+    def setUp(self):
+        """Prepare an instance of the class to be used in tests."""
+        path = Mock()
+        self.tested = ConcreteLSPath(path)
+
+    def _test_read_returns(self, source_of_expected, fallback_to_empty):
+        """Test if the method returns an expected result.
+
+        :param source_of_expected: a mock representing a method of a
+            subclass of the tested class. The method is expected to be
+            the one providing the expected return value as its own
+            return value.
+        :param fallback_to_empty: a value of the fallback_to_empty
+            parameter of the tested method.
+        """
+        expected = Mock()
+        source_of_expected.return_value = expected
+        actual = self.tested.read(fallback_to_empty)
+
+        self.tested.internal_read.assert_called_once_with()
+        self.assertEqual(expected, actual)
+
+    @parameterized.expand([
+        ('with_fallback', True),
+        ('without_fallback', False)
+    ])
+    def test_read_returns_content(self, _, fallback_to_empty):
+        """Test if the method returns content of the path.
+
+        :param fallback_to_empty: a value of the parameter of the tested
+            method, with the same name.
+        """
+        self._test_read_returns(self.tested.internal_read, fallback_to_empty)
+
+    def test_read_returns_empty_value(self):
+        """Test if the method returns empty value."""
+        self.tested.internal_read.side_effect = ConfiguredFileNotFoundError
+        self._test_read_returns(
+            self.tested.internal_get_empty_data,
+            fallback_to_empty=True
+        )
+        self.tested.internal_get_empty_data.assert_called_once_with()
+
+    @parameterized.expand([
+        (ConfiguredFileNotFoundError, ),
+        (ConfiguredPathError, ),
+        (ConfiguredPathError, True)
+    ])
+    def test_read_raises(self, exception, fallback_to_empty=False):
+        """Test if the method raises ConfiguredFileNotFoundError.
+
+        :param exception: an exception expected to be raised.
+        :param fallback_to_empty: a value for fallback_to_empty parameter
+            of the tested method.
+        """
+        self.tested.internal_read.side_effect = exception
+
+        with self.assertRaises(exception):
+            self.tested.read(fallback_to_empty)
+
+        self.tested.internal_read.assert_called_once_with()
+        self.tested.internal_get_empty_data.assert_not_called()
+
+    @parameterized.expand([
+        ('writes_empty_data_to_existing_file', False, True),
+        ('does_not_write_empty_data_to_a_non_existing_file', False, False),
+        ('writes_data_to_new_file', True, False),
+        ('updates_file', True, True),
+        (
+            'raises_ConfiguredFileNotFoundError',
+            True, False, ConfiguredFileNotFoundError
+        ),
+        (
+            'raises_ConfiguredPathError_for_empty_data',
+            False, True, ConfiguredPathError
+        ),
+        (
+            'raises_ConfiguredPathError_for_existing_file',
+            True, True, ConfiguredPathError
+        ),
+        (
+            'raises_ConfiguredPathError_for_non_existing_file',
+            True, False, ConfiguredPathError
+        )
+    ])
+    def test_write(
+            self, _, data_not_empty, file_exists, expected_exception=None
+    ):
+        """Test if the method writes data when it's expected to.
+
+        :param data_not_empty: False if the data mock object represents
+            empty data passed to the method, True otherwise.
+        :param file_exists: True if the file represented by the path
+            exists, False otherwise
+        :param expected_exception: a type of the exception expected to
+            be raised by the tested method, if any.
+        """
+        self.tested.internal_path.exists.return_value = file_exists
+        data = MagicMock()
+        data.__bool__.return_value = data_not_empty
+
+        if expected_exception is not None:
+            self.tested.internal_write.side_effect = expected_exception
+            with self.assertRaises(expected_exception):
+                self.tested.write(data)
+        else:
+            self.tested.write(data)
+
+        if not (data_not_empty or file_exists):
+            self.tested.internal_write.assert_not_called()
+        else:
+            self.tested.internal_write.assert_called_once_with(data)

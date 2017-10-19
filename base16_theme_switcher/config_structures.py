@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 from collections.abc import Mapping, MutableMapping
 from pathlib import Path
 
@@ -176,3 +177,77 @@ class ConfiguredAbsolutePath:
         :returns: a new instance of the class.
         """
         return cls(Path(path))
+
+
+class LazilySaveablePath(ConfiguredAbsolutePath):
+    """A path read during application setup.
+
+    The path may not point to an existing file, but might still be used
+    to save new data.
+
+    The saving is performed lazily - for details, see
+    LazilySaveablePath.write.
+    """
+
+    def __init__(self, path):
+        """Get a path to a lazily-saveable file.
+
+        :param path: a path object
+        :param target_must_exist: a boolean value specifying if the
+            target of the path has to exist. If it doesn't have to,
+            reading data from the file will return an empty value.
+            Otherwise it will result in an error.
+        """
+        super().__init__(path)
+        self._logger = logging.getLogger(__name__)
+
+    def read(self, fallback_to_empty=False):
+        """Get the data from the path.
+
+        :param fallback_to_empty: fallback to a default empty value
+            provided by the subclass if the file under the path doesn't
+            exist.
+        :returns: data read from an existing file, or a default empty
+            value if the file doesn't exist yet and wasn't necessary.
+        :raises ConfiguredFileNotFoundError: if the file is required, but
+            it doesn't exist.
+        :raises ConfiguredPathError: if an operating system error occurs
+            during the operation.
+        """
+        self._logger.info('Reading configuration from %s', self._path)
+        try:
+            with self:
+                return self._read()
+        except ConfiguredFileNotFoundError:
+            if not fallback_to_empty:
+                raise
+            self._logger.info(
+                '%s doesn\'t exist yet. Returning the default empty value'
+            )
+            return self._get_empty_data()
+
+    def write(self, data):
+        """Save given data to the file under the path.
+
+        The data is saved lazily, that is: it is saved only if the data
+        is not empty or if the file already exists. If the file doesn't
+        exist and the data is empty, we don't have to create a file to
+        reflect a lack of custom configuration data.
+
+        :param data: data to be saved
+        :raises ConfiguredFileNotFoundError: if the parent path doesn't
+            exist.
+        :raises ConfiguredPathError: if an operating system error occurs
+            during the operation.
+        """
+        if not (data or self._path.exists()):
+            return
+        self._logger.info('Saving configuration to %s', self._path)
+
+        try:
+            with self:
+                self._write(data)
+        except ConfiguredFileNotFoundError:
+            raise ConfiguredFileNotFoundError(
+                'Parent dir doesn\'t exist for file: {}'.format(self._path)
+            )
