@@ -3,6 +3,8 @@ import logging
 from collections.abc import Mapping, MutableMapping
 from pathlib import Path
 
+from ruamel.yaml import YAML
+
 
 class SetupError(Exception):
     """An error in application setup.
@@ -272,3 +274,15 @@ class LazilySaveableMappingPath(LazilySaveablePath):
             or destination for its data.
         """
         return RootConfigMapping(cls.from_path_str(path))
+
+
+class YamlConfigPath(LazilySaveableMappingPath):
+    """A path to a YAML file."""
+
+    _LOADER = YAML()
+
+    def _read(self):
+        return self._LOADER.load(self._path)
+
+    def _write(self, data):
+        self._LOADER.dump(data, self._path)
