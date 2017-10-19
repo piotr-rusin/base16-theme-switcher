@@ -299,3 +299,15 @@ class CfgConfigPath(LazilySaveableMappingPath):
 
     def _write(self, data):
         self._data.write()
+
+
+class TextConfigPath(LazilySaveablePath):
+    """A path to a config treated as an ordinary text file."""
+
+    _get_empty_data = str
+
+    def _read(self):
+        return self._path.read_text()
+
+    def _write(self, data):
+        self._path.write_text(data)
