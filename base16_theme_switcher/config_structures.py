@@ -8,3 +8,7 @@ class SetupError(Exception):
     configuration file or command line options was detected, or when
     another exception may be a result of such an error.
     """
+
+
+class ConfigKeyError(SetupError, KeyError):
+    """A value of a missing configuration option was requested."""
