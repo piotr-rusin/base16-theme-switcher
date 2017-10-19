@@ -16,3 +16,7 @@ class ConfigKeyError(SetupError, KeyError):
 
 class ConfiguredPathError(SetupError, OSError):
     """A system error occured when processing a user-provided path."""
+
+
+class ConfiguredFileNotFoundError(SetupError, FileNotFoundError):
+    """A file provided by a user wasn't found or couldn't be created."""
