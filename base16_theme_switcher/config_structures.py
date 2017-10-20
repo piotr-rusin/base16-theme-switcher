@@ -220,7 +220,7 @@ class LazilySaveablePath(ConfiguredAbsolutePath):
         self._logger.info('Reading configuration from %s', self._path)
         try:
             with self:
-                return self._read()
+                return self._do_read()
         except ConfiguredFileNotFoundError:
             if not fallback_to_empty:
                 raise
@@ -282,7 +282,7 @@ class YamlConfigPath(LazilySaveableMappingPath):
 
     _LOADER = YAML()
 
-    def _read(self):
+    def _do_read(self):
         return self._LOADER.load(self._path)
 
     def _write(self, data):
@@ -294,7 +294,7 @@ class CfgConfigPath(LazilySaveableMappingPath):
 
     _get_empty_data = configobj.ConfigObj
 
-    def _read(self):
+    def _do_read(self):
         return configobj.ConfigObj(str(self._path))
 
     def _write(self, data):
@@ -306,7 +306,7 @@ class TextConfigPath(LazilySaveablePath):
 
     _get_empty_data = str
 
-    def _read(self):
+    def _do_read(self):
         return self._path.read_text()
 
     def _write(self, data):
