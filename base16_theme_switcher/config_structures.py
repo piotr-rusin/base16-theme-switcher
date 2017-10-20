@@ -172,7 +172,7 @@ class ConfiguredAbsolutePath:
         return exc_value is None
 
     @classmethod
-    def from_path_str(cls, path):
+    def from_(cls, path):
         """Create a new configured absolute path.
 
         :param path: an object representing the path, acceptable as an
@@ -274,7 +274,7 @@ class LazilySaveableMappingPath(LazilySaveablePath):
         :returns: the configuration mapping using the file as a source
             or destination for its data.
         """
-        return RootConfigMapping(cls.from_path_str(path))
+        return RootConfigMapping(cls.from_(path))
 
 
 class YamlConfigPath(LazilySaveableMappingPath):
