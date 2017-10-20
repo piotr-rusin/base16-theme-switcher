@@ -194,9 +194,18 @@ class ConcreteLSPath(LazilySaveablePath):
         """
         super().__init__(path)
         self.internal_path = self._path
-        self.internal_read = self._do_read = Mock()
-        self.internal_write = self._do_write = Mock()
-        self.internal_get_empty_data = self._get_empty_data = Mock()
+        self.internal_read = Mock()
+        self.internal_write = Mock()
+        self.internal_get_empty_data = Mock()
+
+    def _do_read(self):
+        return self.internal_read()
+
+    def _get_empty_data(self):
+        return self.internal_get_empty_data()
+
+    def _do_write(self, data):
+        self.internal_write(data)
 
 
 class LazilySaveablePathTest(ConfiguredAbsolutePathTest):

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+from abc import ABC, abstractmethod
 from collections.abc import Mapping, MutableMapping
 from pathlib import Path
 
@@ -182,7 +183,7 @@ class ConfiguredAbsolutePath:
         return cls(Path(path))
 
 
-class LazilySaveablePath(ConfiguredAbsolutePath):
+class LazilySaveablePath(ConfiguredAbsolutePath, ABC):
     """A path read during application setup.
 
     The path may not point to an existing file, but might still be used
@@ -229,6 +230,14 @@ class LazilySaveablePath(ConfiguredAbsolutePath):
             )
             return self._get_empty_data()
 
+    @abstractmethod
+    def _do_read(self):
+        return
+
+    @abstractmethod
+    def _get_empty_data(self):
+        return
+
     def write(self, data):
         """Save given data to the file under the path.
 
@@ -254,6 +263,10 @@ class LazilySaveablePath(ConfiguredAbsolutePath):
             raise ConfiguredFileNotFoundError(
                 'Parent dir doesn\'t exist for file: {}'.format(self._path)
             )
+
+    @abstractmethod
+    def _do_write(self, data):
+        pass
 
 
 class LazilySaveableMappingPath(LazilySaveablePath):
