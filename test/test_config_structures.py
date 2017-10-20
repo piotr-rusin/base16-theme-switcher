@@ -193,19 +193,19 @@ class ConcreteLSPath(LazilySaveablePath):
         :param path: a mock object representing a file or directory path.
         """
         super().__init__(path)
-        self.internal_path = self._path
-        self.internal_read = Mock()
-        self.internal_write = Mock()
-        self.internal_get_empty_data = Mock()
+        self.internal_path_mock = self._path
+        self.do_read_mock = Mock()
+        self.do_write_mock = Mock()
+        self.get_empty_data_mock = Mock()
 
     def _do_read(self):
-        return self.internal_read()
+        return self.do_read_mock()
 
     def _get_empty_data(self):
-        return self.internal_get_empty_data()
+        return self.get_empty_data_mock()
 
     def _do_write(self, data):
-        self.internal_write(data)
+        self.do_write_mock(data)
 
 
 class LazilySaveablePathTest(ConfiguredAbsolutePathTest):
@@ -236,7 +236,7 @@ class LazilySaveablePathTest(ConfiguredAbsolutePathTest):
         source_of_expected.return_value = expected
         actual = self.tested.read(fallback_to_empty)
 
-        self.tested.internal_read.assert_called_once_with()
+        self.tested.do_read_mock.assert_called_once_with()
         self.assertEqual(expected, actual)
 
     @parameterized.expand([
@@ -249,16 +249,16 @@ class LazilySaveablePathTest(ConfiguredAbsolutePathTest):
         :param fallback_to_empty: a value of the parameter of the tested
             method, with the same name.
         """
-        self._test_read_returns(self.tested.internal_read, fallback_to_empty)
+        self._test_read_returns(self.tested.do_read_mock, fallback_to_empty)
 
     def test_read_returns_empty_value(self):
         """Test if the method returns empty value."""
-        self.tested.internal_read.side_effect = ConfiguredFileNotFoundError
+        self.tested.do_read_mock.side_effect = ConfiguredFileNotFoundError
         self._test_read_returns(
-            self.tested.internal_get_empty_data,
+            self.tested.get_empty_data_mock,
             fallback_to_empty=True
         )
-        self.tested.internal_get_empty_data.assert_called_once_with()
+        self.tested.get_empty_data_mock.assert_called_once_with()
 
     @parameterized.expand([
         (ConfiguredFileNotFoundError, ),
@@ -272,13 +272,13 @@ class LazilySaveablePathTest(ConfiguredAbsolutePathTest):
         :param fallback_to_empty: a value for fallback_to_empty parameter
             of the tested method.
         """
-        self.tested.internal_read.side_effect = exception
+        self.tested.do_read_mock.side_effect = exception
 
         with self.assertRaises(exception):
             self.tested.read(fallback_to_empty)
 
-        self.tested.internal_read.assert_called_once_with()
-        self.tested.internal_get_empty_data.assert_not_called()
+        self.tested.do_read_mock.assert_called_once_with()
+        self.tested.get_empty_data_mock.assert_not_called()
 
     @parameterized.expand([
         ('writes_empty_data_to_existing_file', False, True),
@@ -314,18 +314,18 @@ class LazilySaveablePathTest(ConfiguredAbsolutePathTest):
         :param expected_exception: a type of the exception expected to
             be raised by the tested method, if any.
         """
-        self.tested.internal_path.exists.return_value = file_exists
+        self.tested.internal_path_mock.exists.return_value = file_exists
         data = MagicMock()
         data.__bool__.return_value = data_not_empty
 
         if expected_exception is not None:
-            self.tested.internal_write.side_effect = expected_exception
+            self.tested.do_write_mock.side_effect = expected_exception
             with self.assertRaises(expected_exception):
                 self.tested.write(data)
         else:
             self.tested.write(data)
 
         if not (data_not_empty or file_exists):
-            self.tested.internal_write.assert_not_called()
+            self.tested.do_write_mock.assert_not_called()
         else:
-            self.tested.internal_write.assert_called_once_with(data)
+            self.tested.do_write_mock.assert_called_once_with(data)
