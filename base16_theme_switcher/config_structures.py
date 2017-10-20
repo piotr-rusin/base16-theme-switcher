@@ -249,7 +249,7 @@ class LazilySaveablePath(ConfiguredAbsolutePath):
 
         try:
             with self:
-                self._write(data)
+                self._do_write(data)
         except ConfiguredFileNotFoundError:
             raise ConfiguredFileNotFoundError(
                 'Parent dir doesn\'t exist for file: {}'.format(self._path)
@@ -285,7 +285,7 @@ class YamlConfigPath(LazilySaveableMappingPath):
     def _do_read(self):
         return self._LOADER.load(self._path)
 
-    def _write(self, data):
+    def _do_write(self, data):
         self._LOADER.dump(data, self._path)
 
 
@@ -297,7 +297,7 @@ class CfgConfigPath(LazilySaveableMappingPath):
     def _do_read(self):
         return configobj.ConfigObj(str(self._path))
 
-    def _write(self, data):
+    def _do_write(self, data):
         self._data.write()
 
 
@@ -309,5 +309,5 @@ class TextConfigPath(LazilySaveablePath):
     def _do_read(self):
         return self._path.read_text()
 
-    def _write(self, data):
+    def _do_write(self, data):
         self._path.write_text(data)
