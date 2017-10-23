@@ -48,7 +48,8 @@ class ConfigMappingTest(unittest.TestCase):
     def setUp(self):
         """Prepare the instance of the class to be used in tests."""
         self.prepareData()
-        self.tested = ConfigMapping(self.data, ('root', ))
+        self.initial_ancestors = 'root',
+        self.tested = ConfigMapping(self.data, self.initial_ancestors)
 
     @parameterized.expand([
         ('option_value', 'first'),
@@ -76,8 +77,10 @@ class ConfigMappingTest(unittest.TestCase):
             non-existing value.
         """
         msg = (
-            'The expected configuration option "{}" is missing '
-            'in {}'.format(keys[-1], ':'.join(['root'] + list(keys[:-1])))
+            'A requested configuration option "{}" is missing '
+            'in {}'.format(keys[-1], ':'.join(
+                self.initial_ancestors + tuple(keys[:-1])
+            ))
         )
         with self.assertRaisesRegex(ConfigKeyError, msg):
             get_by_key_chain(self.tested, keys)
@@ -126,7 +129,9 @@ class RootConfigMappingTest(ConfigMappingTest):
     def setUp(self):
         """Prepare the instance of the class to be tested."""
         self.prepareData()
-        source = Mock()
+        source = MagicMock()
+        source.__str__.return_value = 'root'
+        self.initial_ancestors = str(source),
         source.read.return_value = self.data
         self.tested = RootConfigMapping(source)
 
