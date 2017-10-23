@@ -66,3 +66,16 @@ def apply_configured_plugins(obj, available_plugins):
                 'Error while setting up "{}" plugin.'.format(name)
             ) from e
         logger.info('The "%s" plugin was successfully initialized.', name)
+
+
+def apply_configured_b16ts_plugins(theme_switcher_builder):
+    """Apply plugins configured for an instance of theme switcher.
+
+    :param theme_switcher_builder: an object used to build a theme
+        switcher object.
+    :raises ConfigValueError: if an unavailable plugin is configured, or
+        if this error was raised while applying a plugin
+    :raises SetupError: if there was an error in setting up a plugin.
+    """
+    plugin_name_map = get_modules_by_name_prefix('b16ts_')
+    apply_configured_plugins(theme_switcher_builder, plugin_name_map)
