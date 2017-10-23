@@ -5,7 +5,12 @@ from unittest.mock import Mock, patch
 
 from parameterized import parameterized
 
-from base16_theme_switcher.plugin_loading import get_modules_by_name_prefix
+from base16_theme_switcher.plugin_loading import (
+    ConfigValueError,
+    SetupError,
+    apply_configured_plugins,
+    get_modules_by_name_prefix,
+)
 
 
 def get_prefixed(strs, prefix):
@@ -70,3 +75,57 @@ class GetModulesByNamePrefixTest(TestCase):
         module_to_name_map = get_modules_by_name_prefix(self.PREFIX)
 
         self.assertCountEqual(expected, module_to_name_map.keys())
+
+
+class ApplyConfiguredPluginsTest(TestCase):
+    """Tests for apply_configured_plugins function."""
+
+    def setUp(self):
+        self.obj_mock = Mock()
+        self.config = {
+            'plugins': {
+                'first': {},
+                'second': {'arg1': 77, 'arg2': 'lorem ipsum'},
+                'third': {'arg3': 88}
+            }
+        }
+        self.available_plugin_mocks = {n: Mock() for n in self.config['plugins']}
+        self.obj_mock.config = self.config
+
+    def _call(self):
+        apply_configured_plugins(self.obj_mock, self.available_plugin_mocks)
+
+    def assertCallRaises(self, exc_type, msg_regex):
+        """Check if the call to the function raises an error.
+
+        :param exc_type: a type of an exception to be raised.
+        :param msg_regex: a regular expression expected to match the string
+            representation of expected error.
+        """
+        with self.assertRaisesRegex(exc_type, msg_regex):
+            self._call()
+
+    def test_raises_ConfigValueError(self):
+        """Check if the error is raised for wrong configuration format."""
+        self.config['plugins'] = Mock()
+        msg = 'Invalid plugin configuration format.'
+        self.assertCallRaises(ConfigValueError, msg)
+
+    def test_raises_ConfigValueError_2(self):
+        """Check if the error is raised for unavailable plugin."""
+        self.config['plugins']['unknown_plugin'] = {'arg4': 'abc'}
+        msg = 'The "unknown_plugin" plugin is configured but not available.'
+        self.assertCallRaises(ConfigValueError, msg)
+
+    def test_raises_SetupError(self):
+        """Check if the error is re-raised while applying a plugin."""
+        name, mock = list(self.available_plugin_mocks.items())[1]
+        mock.apply_to.side_effect = SetupError
+        msg = 'Error while setting up "{}" plugin.'.format(name)
+        self.assertCallRaises(SetupError, msg)
+
+    def test_applies_all(self):
+        """Check if the function applies all plugins to the object."""
+        self._call()
+        for m in self.available_plugin_mocks.values():
+            m.apply_to.assert_called_once_with(self.obj_mock)
