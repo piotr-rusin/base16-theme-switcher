@@ -29,6 +29,10 @@ class ConfiguredFileNotFoundError(SetupError, FileNotFoundError):
     """A file provided by a user wasn't found or couldn't be created."""
 
 
+class ConfigValueError(SetupError, Exception):
+    """An incorrect value of a configuration option."""
+
+
 class ConfigMapping(MutableMapping):
     """A multidimensional mapping of configuration options.
 
