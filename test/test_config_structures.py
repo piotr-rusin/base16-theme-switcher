@@ -75,15 +75,12 @@ class ConfigMappingTest(unittest.TestCase):
         :param keys: a chain of keys to be used to attempt to access a
             non-existing value.
         """
-        with self.assertRaises(ConfigKeyError) as ex:
+        msg = (
+            'The expected configuration option "{}" is missing '
+            'in {}'.format(keys[-1], ':'.join(['root'] + list(keys[:-1])))
+        )
+        with self.assertRaisesRegex(ConfigKeyError, msg):
             get_by_key_chain(self.tested, keys)
-            self.assertEqual(
-                str(ex),
-                'The expected configuration option "{}" is missing '
-                'in {}'.format(
-                    keys[-1], ':'.join(['root'] + list(keys[:-1]))
-                )
-            )
 
     @parameterized.expand([
         ('an_option_value', 'option', 1345),
