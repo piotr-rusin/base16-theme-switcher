@@ -3,6 +3,8 @@ import logging
 from logging import handlers
 import subprocess
 
+from .config_structures import ConfiguredAbsolutePath
+
 
 class NotifySendHandler(logging.Handler):
     """A handler showing messages as desktop notifications."""
@@ -47,3 +49,14 @@ def configure_root_logger(log_path, verbose=False):
         )
         file_handler.setLevel(logging.DEBUG)
         logger.addHandler(file_handler)
+
+
+def configure_b16ts_root_logger(log_path, verbose):
+    """Configure the root logger to be used by base16-theme-switcher.
+
+        :param log_path: a path to a file to be used by RotatingFileHandler
+    :param verbose: set the level of the logger to logging.DEBUG if True,
+        otherwise set the level to logging.ERROR
+    """
+    path = ConfiguredAbsolutePath.from_path_str(log_path)
+    configure_root_logger(path, verbose)
