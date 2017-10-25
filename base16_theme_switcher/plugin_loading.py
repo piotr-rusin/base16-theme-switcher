@@ -37,9 +37,9 @@ def apply_configured_plugins(obj, available_plugins):
     """Apply configured plugins to the object.
 
     :param obj: an object to which the function applies available
-        plugins. It also provides the configuration that includes a
-        plugin section as a mapping of names of plugins to activate to
-        configuration options to be used by each plugin.
+        plugins. It also provides a configuration mapping that includes
+        a 'plugins' key mapped to an object providing a sequence of
+        names of plugins to activate.
     :param available_plugins: a map of available plugins to their names.
     :raises ConfigValueError: if an unavailable plugin is included in
         the configuration, or if this error was raised while applying
