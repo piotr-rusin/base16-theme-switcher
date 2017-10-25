@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Tests for classes representing configuration data and sources."""
 
 import unittest
 from unittest.mock import MagicMock, Mock

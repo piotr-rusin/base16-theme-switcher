@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Components of plugin discovery and loading system."""
+
 import importlib
 import logging
 import pkgutil

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Configuration value classes, read and write handlers and exceptions."""
+
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, MutableMapping

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Tests for components of plugin discovery and loading system."""
+
 from random import shuffle
 from unittest import TestCase
 from unittest.mock import Mock, patch
