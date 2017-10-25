@@ -60,3 +60,21 @@ def configure_b16ts_root_logger(log_path, verbose):
     """
     path = ConfiguredAbsolutePath.from_path_str(log_path)
     configure_root_logger(path, verbose)
+
+
+def get_info_logger(name, use_gui):
+    """Get a logger for logging.INFO and more severe messages.
+
+    :param name: a name to be used for the logger
+    :param use_gui: True if the logger is going to have a
+        notification-send handler, otherwise False.
+    :returns: the logger object.
+    """
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+
+    if use_gui:
+        desktop_notification_handler = NotifySendHandler(logging.INFO)
+        logger.addHandler(desktop_notification_handler)
+
+    return logger
