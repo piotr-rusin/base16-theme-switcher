@@ -84,15 +84,12 @@ class ApplyConfiguredPluginsTest(TestCase):
 
     def setUp(self):
         self.plugin_api_impl_mock = Mock()
-        self.config = {
-            'plugins': {
-                'first': {},
-                'second': {'arg1': 77, 'arg2': 'lorem ipsum'},
-                'third': {'arg3': 88}
-            }
+        plugins_to_activate = ['first', 'second', 'third']
+        self.available_plugin_mocks = {
+            n: Mock() for n in plugins_to_activate
         }
-        self.available_plugin_mocks = {n: Mock() for n in self.config['plugins']}
-        self.plugin_api_impl_mock.config = self.config
+        self.plugin_api_impl_mock.plugins_to_activate = plugins_to_activate
+        self.plugins_to_activate = plugins_to_activate
 
     def _call(self):
         apply_configured_plugins(
@@ -110,15 +107,9 @@ class ApplyConfiguredPluginsTest(TestCase):
         with self.assertRaisesRegex(exc_type, msg_regex):
             self._call()
 
-    def test_raises_ConfigValueError(self):
-        """Check if the error is raised for wrong configuration format."""
-        self.config['plugins'] = Mock()
-        msg = 'Invalid plugin configuration format.'
-        self.assertCallRaises(ConfigValueError, msg)
-
     def test_raises_ConfigValueError_2(self):
         """Check if the error is raised for unavailable plugin."""
-        self.config['plugins']['unknown_plugin'] = {'arg4': 'abc'}
+        self.plugins_to_activate.append('unknown_plugin')
         msg = 'The "unknown_plugin" plugin is configured but not available.'
         self.assertCallRaises(ConfigValueError, msg)
 

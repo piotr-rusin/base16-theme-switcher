@@ -4,7 +4,6 @@
 import importlib
 import logging
 import pkgutil
-from collections.abc import Mapping
 
 from .config_structures import ConfigValueError, SetupError
 
@@ -39,21 +38,17 @@ def apply_configured_plugins(plugin_api_impl, available_plugins):
     """Apply configured plugins to the application.
 
     :param plugin_api_impl: an object providing an application-specific
-        part of plugin system API. It also provides a configuration
-        mapping that includes a 'plugins' key mapped to an object
-        providing a sequence of names of plugins to activate.
+        part of plugin system API. It also provides a sequence of names
+        of plugins to be activated.
     :param available_plugins: a map of available plugins to their names.
     :raises ConfigValueError: if an unavailable plugin is included in
-        the configuration, or if this error was raised while applying
-        a plugin.
+        the names of plugins to be activated, or if this error was
+        raised while applying a plugin.
     :raises SetupError: if there was an error with setting up a plugin.
     """
     logger = logging.getLogger(__name__)
-    plugin_config = plugin_api_impl.config['plugins']
-    if not isinstance(plugin_config, Mapping):
-        raise ConfigValueError('Invalid plugin configuration format.')
 
-    for name in plugin_config:
+    for name in plugin_api_impl.plugins_to_activate:
         logger.info('Attemtping to initialize "%s" plugin...')
         try:
             module = available_plugins[name]
