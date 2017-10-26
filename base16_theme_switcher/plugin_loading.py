@@ -35,13 +35,13 @@ def get_modules_by_name_prefix(prefix):
     return name_module_map
 
 
-def apply_configured_plugins(obj, available_plugins):
-    """Apply configured plugins to the object.
+def apply_configured_plugins(plugin_api_impl, available_plugins):
+    """Apply configured plugins to the application.
 
-    :param obj: an object to which the function applies available
-        plugins. It also provides a configuration mapping that includes
-        a 'plugins' key mapped to an object providing a sequence of
-        names of plugins to activate.
+    :param plugin_api_impl: an object providing an application-specific
+        part of plugin system API. It also provides a configuration
+        mapping that includes a 'plugins' key mapped to an object
+        providing a sequence of names of plugins to activate.
     :param available_plugins: a map of available plugins to their names.
     :raises ConfigValueError: if an unavailable plugin is included in
         the configuration, or if this error was raised while applying
@@ -49,7 +49,7 @@ def apply_configured_plugins(obj, available_plugins):
     :raises SetupError: if there was an error with setting up a plugin.
     """
     logger = logging.getLogger(__name__)
-    plugin_config = obj.config['plugins']
+    plugin_config = plugin_api_impl.config['plugins']
     if not isinstance(plugin_config, Mapping):
         raise ConfigValueError('Invalid plugin configuration format.')
 
@@ -62,7 +62,7 @@ def apply_configured_plugins(obj, available_plugins):
                 'The "{}" plugin is configured but not available.'.format(name)
             )
         try:
-            module.apply_to(obj)
+            module.apply_to(plugin_api_impl)
         except SetupError as e:
             raise SetupError(
                 'Error while setting up "{}" plugin.'.format(name)

@@ -83,7 +83,7 @@ class ApplyConfiguredPluginsTest(TestCase):
     """Tests for apply_configured_plugins function."""
 
     def setUp(self):
-        self.obj_mock = Mock()
+        self.plugin_api_impl_mock = Mock()
         self.config = {
             'plugins': {
                 'first': {},
@@ -92,10 +92,13 @@ class ApplyConfiguredPluginsTest(TestCase):
             }
         }
         self.available_plugin_mocks = {n: Mock() for n in self.config['plugins']}
-        self.obj_mock.config = self.config
+        self.plugin_api_impl_mock.config = self.config
 
     def _call(self):
-        apply_configured_plugins(self.obj_mock, self.available_plugin_mocks)
+        apply_configured_plugins(
+            self.plugin_api_impl_mock,
+            self.available_plugin_mocks
+        )
 
     def assertCallRaises(self, exc_type, msg_regex):
         """Check if the call to the function raises an error.
@@ -130,4 +133,4 @@ class ApplyConfiguredPluginsTest(TestCase):
         """Check if the function applies all plugins to the object."""
         self._call()
         for m in self.available_plugin_mocks.values():
-            m.apply_to.assert_called_once_with(self.obj_mock)
+            m.apply_to.assert_called_once_with(self.plugin_api_impl_mock)
