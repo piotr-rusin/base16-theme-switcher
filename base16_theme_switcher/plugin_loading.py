@@ -66,14 +66,17 @@ def apply_configured_plugins(plugin_api_impl, available_plugins):
         logger.info('The "%s" plugin was successfully initialized.', name)
 
 
-def apply_configured_b16ts_plugins(theme_switcher_builder):
-    """Apply plugins configured for an instance of theme switcher.
+def apply_configured_prefixed_plugins(plugin_api_impl, prefix):
+    """Apply configured plugins available as modules.
 
-    :param theme_switcher_builder: an object used to build a theme
-        switcher object.
+    :param plugin_api_impl: an object providing an application-specific
+        part of plugin system API. It also provides a sequence of names
+        of plugins to be activated.
+    :param prefix: a prefix of names of plugin modules to be recognized
+        as available.
     :raises ConfigValueError: if an unavailable plugin is configured, or
-        if this error was raised while applying a plugin
+        if this error was raised while applying a plugin.
     :raises SetupError: if there was an error in setting up a plugin.
     """
-    plugin_name_map = get_modules_by_name_prefix('b16ts_')
-    apply_configured_plugins(theme_switcher_builder, plugin_name_map)
+    plugin_name_map = get_modules_by_name_prefix(prefix)
+    apply_configured_plugins(plugin_api_impl, plugin_name_map)
