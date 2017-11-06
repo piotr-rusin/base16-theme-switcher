@@ -40,7 +40,8 @@ def apply_configured_plugins(plugin_api_impl, available_plugins):
     :param plugin_api_impl: an object providing an application-specific
         part of plugin system API. It also provides a sequence of names
         of plugins to be activated.
-    :param available_plugins: a map of available plugins to their names.
+    :param available_plugins: a mapping of available plugins to their
+        names.
     :raises ConfigValueError: if an unavailable plugin is included in
         the names of plugins to be activated, or if this error was
         raised while applying a plugin.
