@@ -4,7 +4,12 @@ from unittest.mock import Mock, MagicMock
 
 from parameterized import parameterized
 
-from base16_theme_switcher.themes import Base16Theme, InvalidThemeError
+from base16_theme_switcher.themes import (
+    Base16Theme,
+    Base16ThemeNameMap,
+    DuplicateThemeNameError,
+    InvalidThemeError,
+)
 
 
 class Base16ThemeTest(TestCase):
@@ -98,3 +103,108 @@ class Base16ThemeTest(TestCase):
 
         actual_paths = [t.path for t in Base16Theme.find_all_in(dir_path)]
         self.assertCountEqual(expected_paths, actual_paths)
+
+
+def theme_mock(name='example-theme'):
+    """Get a mock representing a theme object.
+
+    :param name: a name of a theme represented by the mock
+    :returns: the mock.
+    """
+    theme = Mock()
+    theme.name = name
+    return theme
+
+
+class Base16ThemeNameMapTest(TestCase):
+    """Tests for Base16ThemeNameMap."""
+
+    def setUp(self):
+        self.theme_names = 'alpha', 'beta', 'omega'
+        self.themes = [theme_mock(t) for t in self.theme_names]
+        self.tested = Base16ThemeNameMap(self.themes)
+
+    def test_add_adds_a_theme(self):
+        """Test if a theme is added to a theme collection."""
+        new_theme = theme_mock()
+        self.tested.add(new_theme)
+
+        self.assertIn(new_theme.name, self.tested)
+        self.assertEqual(new_theme, self.tested[new_theme.name])
+
+    def test_getitem_returns_a_theme(self):
+        """Test if an existing theme is returned."""
+        expected = self.themes[0]
+        actual = self.tested[self.theme_names[0]]
+        self.assertEqual(expected, actual)
+
+    def test_getitem_raises_KeyError(self):
+        """Test if the exception is raised for an unknown theme."""
+        name = 'unknown-theme'
+        with self.assertRaisesRegex(KeyError, name):
+            self.tested.__getitem__(name)
+
+    def test_init_raises_DuplicateThemeNameError(self):
+        """Test if the exception is raised for a duplicate theme."""
+        themes = [theme_mock('duplicate-theme') for _ in range(2)]
+        with self.assertRaisesRegex(
+            DuplicateThemeNameError,
+            'A theme named "duplicate-theme" already exists.'
+        ):
+            Base16ThemeNameMap(themes)
+
+    def test_add_raises_DuplicateThemeNameError(self):
+        """Test if the exception is raised for a duplicate theme."""
+        theme = theme_mock('duplicate-theme')
+        self.tested.add(theme)
+        with self.assertRaisesRegex(
+            DuplicateThemeNameError,
+            'A theme named "duplicate-theme" already exists.'
+        ):
+            self.tested.add(theme)
+
+    def test_iter(self):
+        """Test if __iter__ returns expected iterator.
+
+        Expected iterator is an iterator that returns themes in an
+        expected order.
+        """
+        expected = list(iter({t.name: t for t in self.themes}))
+        actual = list(iter(self.tested))
+        self.assertSequenceEqual(expected, actual)
+
+    def test_len(self):
+        """Test if the number of items is returned."""
+        expected = len(self.themes)
+        actual = len(self.tested)
+        self.assertEqual(expected, actual)
+
+    def test_sorted_by_name(self):
+        """Test if the property returns themes sorted by name."""
+        expected = sorted(self.themes, key=lambda t: t.name)
+        actual = self.tested.sorted_by_name
+        self.assertSequenceEqual(expected, actual)
+
+    @parameterized.expand([
+        (True, [Mock()]),
+        (False, [])
+    ])
+    def test_bool_returns(self, expected, themes):
+        """Test if the method returns expected value.
+
+        :param expected: the value expected to be returned.
+        :param themes: content of a collection for which the function
+            returns expected values.
+        """
+        tested = Base16ThemeNameMap(themes)
+        actual = bool(tested)
+        assertion = self.assertTrue if expected else self.assertFalse
+        assertion(actual)
+
+    def test_from_unique(self):
+        """Test if a collection of expected, unique themes is returned."""
+        unique_themes = [theme_mock(n) for n in ('first', 'second', 'third')]
+        with_duplicates = unique_themes + unique_themes[1:]
+        expected = Base16ThemeNameMap(unique_themes)
+        actual = Base16ThemeNameMap.from_unique(with_duplicates)
+        self.assertEqual(expected, actual)

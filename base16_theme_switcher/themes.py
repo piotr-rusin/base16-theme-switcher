@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+import logging
 import re
+from collections.abc import Mapping
 from os.path import basename, splitext
 from string import ascii_uppercase, digits
+
+from .config_structures import ConfiguredAbsolutePath
 
 
 class InvalidThemeError(ValueError):
@@ -129,3 +133,102 @@ class Base16Theme:
         with path:
             for f in path.rglob('*.Xresources'):
                 yield cls(f)
+
+
+class Base16ThemeNameMap(Mapping):
+    """A mapping of a base16 theme object to its name."""
+
+    def __init__(self, themes=()):
+        """Create a new collection.
+
+        :param themes: initial themes to be included in the collection.
+        :raises DuplicateThemeNameError: if themes contain at least two
+            themes sharing a name.
+        """
+        self._themes = dict()
+        for t in themes:
+            self.add(t)
+
+    def __getitem__(self, name):
+        """Get a base16 color theme by its name.
+
+        :param name: a name of the theme to be returned.
+        :returns: the requested theme.
+        :raises KeyError: if the collection doesn't contain a theme with
+            given name.
+        """
+        return self._themes[name]
+
+    def __iter__(self):
+        """Iterate over names of themes in the collection."""
+        return iter(self._themes)
+
+    def __len__(self):
+        """Get the number of mappings in the collection."""
+        return len(self._themes)
+
+    def add(self, theme):
+        """Add a theme to the collection.
+
+        :param theme: a theme to be added.
+        :raises DuplicateThemeNameError: if the collection already
+            contains a theme with the name equal to that of the given
+            theme.
+        """
+        name = theme.name
+        if name in self._themes:
+            raise DuplicateThemeNameError(
+                'A theme named "{}" already exists.'.format(theme.name)
+            )
+        self._themes[name] = theme
+
+    @property
+    def sorted_by_name(self):
+        """Get all themes in the collection sorted by their names.
+
+        :returns: a list of the themes.
+        """
+        return sorted(self._themes.values(), key=lambda t: t.name)
+
+    def __bool__(self):
+        """Check if the collection contains anything.
+
+        :returns: False if the collection is empty, True otherwise.
+        """
+        return bool(self._themes)
+
+    @classmethod
+    def from_unique(cls, themes):
+        """Create a collection from given themes.
+
+        :param themes: a sequence of themes to be added to the new
+            collection. For all of given themes that share a name, the
+            first encountered theme is added and the presence of the
+            rest is logged.
+        :returns: an instance of this class containing the given themes.
+        """
+        logger = logging.getLogger(__name__)
+        unique_themes = cls()
+        for t in themes:
+            try:
+                unique_themes.add(t)
+            except DuplicateThemeNameError as e:
+                logger.warning(
+                    'Ignoring a theme with a conflicting name: %s', e
+                )
+        return unique_themes
+
+    @classmethod
+    def from_unique_in(cls, theme_search_path):
+        """Create a collection of themes stored in the directory.
+
+        :param theme_search_path: a path to be searched for themes.
+            For all themes found in the directory and sharing a name,
+            only the first encountered theme is added and the presence
+            of the rest is logged.
+        :returns: an instance of this class containing the unique themes.
+        """
+        themes = Base16Theme.find_all_in(
+            ConfiguredAbsolutePath.from_path_str(theme_search_path)
+        )
+        return cls.from_unique(themes)
