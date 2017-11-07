@@ -23,6 +23,10 @@ class InvalidThemeError(ValueError):
         )
 
 
+class DuplicateThemeNameError(ValueError):
+    """A theme with a name of another theme was dected."""
+
+
 class Base16Theme:
     """Represents a base16 color theme loaded from an .Xresources file.
 
