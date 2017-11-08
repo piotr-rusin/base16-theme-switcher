@@ -4,6 +4,8 @@ import subprocess
 from abc import ABC, abstractmethod
 
 from .config_structures import ConfigValueError, SetupError, YamlConfigPath
+from .logging import configure_b16ts_root_logger, get_info_logger
+from .plugin_loading import apply_configured_prefixed_plugins
 from .themes import Base16ThemeNameMap
 
 
@@ -217,3 +219,28 @@ class ThemeSwitcher:
             theme = self._prompt()
 
         self.current_theme_name = theme
+
+
+def main(command_args):
+    """Set up the application and execute it with given arguments.
+
+    :param command_args: command-line arguments.
+    """
+    logger = get_info_logger(
+        __name__,
+        use_gui=not (command_args.theme or command_args.reload)
+    )
+    try:
+        configure_b16ts_root_logger(
+            command_args.log,
+            verbose=command_args.verbose
+        )
+        builder = ThemeSwitcherBuilder.from_(command_args.config)
+        apply_configured_prefixed_plugins(builder, 'b16ts_')
+        theme_switcher = builder.build()
+        theme_switcher.main(command_args)
+
+    except SetupError as e:
+        logger.error(e)
+    except Exception:
+        logger.exception('An unexpected error occured.')
