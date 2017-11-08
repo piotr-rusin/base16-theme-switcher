@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import logging
+import subprocess
 from abc import ABC, abstractmethod
 
 from .config_structures import ConfigValueError, SetupError, YamlConfigPath
@@ -127,3 +129,91 @@ class ThemeSwitcherBuilder:
                 )
             )
         return cls(config, themes)
+
+
+class ThemeSwitcher:
+    """An object responsible for setting themes."""
+
+    def __init__(self, config, themes, theme_appliers, prompt):
+        """Create a new instance.
+
+        :param config: a configuration mapping to be used by the object.
+        :param themes: a mapping of themes indexed by their names.
+        :param theme_appliers: a sequence of objects responsible for
+            applying theme changes to different applications.
+        :param prompt: a callable for presenting user with a theme
+            selection prompt.
+        """
+        if config is None:
+            raise SetupError(
+                'No configuration provided to theme switcher.'
+            )
+        self._config = config
+        if not themes:
+            raise SetupError('No themes provided to theme switcher.')
+        self._themes = themes
+        self._theme_appliers = theme_appliers
+        if prompt is None:
+            raise SetupError('No prompt provided to theme switcher.')
+        self._prompt = prompt
+        self._logger = logging.getLogger(__name__)
+
+    def _apply(self, theme_name):
+        """Apply a theme without saving it to the configuration.
+
+        :param theme_name: a name of a theme to be applied.
+        :raises KeyError: if there is no theme with the name.
+        """
+        theme = self._themes[theme_name]
+        subprocess.call('xrdb -merge {}'.format(theme), shell=True)
+        for c in self._theme_appliers:
+            c.apply(theme)
+
+    @property
+    def current_theme_name(self):
+        """Get a name of the currently configured theme."""
+        return self._config.get(
+            'theme',
+            self._themes.sorted_by_name[0].name
+        )
+
+    @current_theme_name.setter
+    def current_theme_name(self, theme_name):
+        """Set a theme with given name.
+
+        The process consists of applying the theme and saving its name
+        to the configuration.
+
+        :param theme_name: a name of a theme to be set.
+        :raises KeyError: if there is no theme with the name.
+        """
+        self._apply(theme_name)
+        self._config['theme'] = theme_name
+        self._config.save()
+        self._logger.info(
+            'The theme "%s" has been successfully applied.', theme_name
+        )
+
+    def reload(self):
+        """Re-apply the currently configured theme."""
+        self._logger.info('Reloading a preconfigured theme...')
+        self._apply(self.current_theme_name)
+        self._logger.info(
+            'The theme "%s" has been reloaded successfully.',
+            self.current_theme_name
+        )
+
+    def main(self, command_args):
+        """Set or apply a theme based on command-line arguments.
+
+        :param command_args: command-line arguments.
+        """
+        if command_args.reload:
+            self.reload()
+            return
+
+        theme = command_args.theme
+        if theme is None:
+            theme = self._prompt()
+
+        self.current_theme_name = theme
