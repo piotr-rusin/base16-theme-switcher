@@ -8,6 +8,7 @@ class ThemeApplier(ABC):
     Subclasses of this class are responsible for providing a support for
     base16 theme setting for applications accepting color configuration.
     """
+
     @abstractmethod
     def apply(self, theme):
         """Perform actions necessary to apply the theme.
