@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""The application's root components."""
+
 import logging
 import subprocess
 from abc import ABC, abstractmethod

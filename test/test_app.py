@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Tests for the application's root components."""
+
 import unittest
 from unittest.mock import Mock, MagicMock, patch
 
