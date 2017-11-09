@@ -62,6 +62,11 @@ class ThemeSwitcherBuilder:
         self._prompt = None
 
     @property
+    def plugins_to_activate(self):
+        """Get a list of plugins to be activated for the application."""
+        return list(self._config.get('plugins', {}).keys())
+
+    @property
     def config(self):
         """Configuration mapping to be used by theme switcher."""
         return self._config
