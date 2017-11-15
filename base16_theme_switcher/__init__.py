@@ -12,7 +12,7 @@ of prompting a user for a name of a theme to be set or for configuring
 themes for other applications.
 """
 __title__ = 'base16-theme-switcher'
-__version__ = '1.0.0b1'
+__version__ = '1.0.0b2'
 __author__ = 'Piotr Rusin'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2017 Piotr Rusin'
