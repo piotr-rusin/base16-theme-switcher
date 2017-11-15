@@ -3,6 +3,7 @@ env/
 .venv
 
 *.pyc
+.coverage
 
 # Distribution / packaging
 dist/
